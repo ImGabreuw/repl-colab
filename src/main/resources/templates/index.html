@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Java Repl Colaborativo</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        #editor {
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+<body class="bg-slate-100 h-screen flex flex-col">
+    <header class="bg-slate-800 text-white p-4">
+        <h1 class="text-xl font-bold">Java Repl Colaborativo</h1>
+    </header>
+
+    <div class="flex-grow flex flex-col md:flex-row p-4 gap-4">
+        <div class="w-full md:w-1/2 bg-white rounded-lg shadow-md flex flex-col">
+            <div class="bg-slate-700 text-white p-2 rounded-t-lg flex justify-between items-center">
+                <span class="font-medium">Main.java</span>
+            </div>
+            <div id="editor" class="flex-grow rounded-b-lg"></div>
+        </div>
+
+        <div class="w-full md:w-1/2 bg-white rounded-lg shadow-md flex flex-col">
+            <div class="bg-slate-700 text-white p-2 rounded-t-lg">
+                <span class="font-medium">Console</span>
+            </div>
+            <div id="output" class="flex-grow p-4 font-mono text-sm bg-slate-800 text-green-400 rounded-b-lg overflow-auto">
+                > Resultado da execução aparecerá aqui...
+            </div>
+            <div class="p-3 border-t border-slate-200">
+                <button id="run-button" class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded transition">
+                    Executar código
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="bg-slate-800 text-white p-2 text-center text-sm">
+        <p>Colabore compartilhando a URL desta página</p>
+    </footer>
+
+    <script>
+        const editor = ace.edit("editor");
+        editor.setTheme("ace/theme/monokai");
+        editor.session.setMode("ace/mode/java");
+        editor.setFontSize(14);
+
+        const javaTemplate = `import java.util.*;
+import java.io.*;
+import java.text.*;
+
+public class Main {
+    public static void main(String[] args) {
+        System.out.println("Olá, mundo!");
+
+        // Exibindo a data atual
+        Date agora = new Date();
+        SimpleDateFormat formatador = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
+        System.out.println("Data atual: " + formatador.format(agora));
+
+        // Exemplo com ArrayList
+        List<String> linguagens = new ArrayList<>();
+        linguagens.add("Java");
+        linguagens.add("Python");
+        linguagens.add("JavaScript");
+
+        System.out.println("\\nLinguagens de programação:");
+        for (String linguagem : linguagens) {
+            System.out.println(" - " + linguagem);
+        }
+    }
+}`;
+
+        // Definir código inicial
+        editor.setValue(javaTemplate);
+        editor.clearSelection();
+
+        document.getElementById("run-button").addEventListener("click", function() {
+            const code = editor.getValue();
+            const output = document.getElementById("output");
+
+            output.innerHTML = "> Executando...\n";
+
+            fetch("/run", {
+                method: "POST",
+                body: code,
+                headers: {
+                    "Content-Type": "text/plain"
+                }
+            })
+            .then(response => response.text())
+            .then(result => {
+                output.innerHTML = "> " + result
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/\n/g, "<br>");
+            })
+            .catch(error => {
+                output.innerHTML = "> Erro: " + error;
+            });
+        });
+    </script>
+</body>
+</html>
