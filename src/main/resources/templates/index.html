@@ -3,6 +3,7 @@
 <head>
     <title>Java Repl Colaborativo</title>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ace.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ace/1.4.12/ext-language_tools.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
         #editor {
@@ -21,23 +22,25 @@
         <div class="bg-slate-700 text-white p-2 rounded-t-lg flex justify-between items-center">
             <span class="font-medium">Main.java</span>
         </div>
-        <div id="editor" class="flex-grow rounded-b-lg"></div>
+        <div id="editor" class="flex-grow rounded-b-lg"></
+        fran>
     </div>
+</div>
 
-    <div class="w-full md:w-1/2 bg-white rounded-lg shadow-md flex flex-col">
-        <div class="bg-slate-700 text-white p-2 rounded-t-lg">
-            <span class="font-medium">Console</span>
-        </div>
-        <div id="output" class="flex-grow p-4 font-mono text-sm bg-slate-800 text-green-400 rounded-b-lg overflow-auto">
-            > Resultado da execução aparecerá aqui...
-        </div>
-        <div class="p-3 border-t border-slate-200">
-            <button id="run-button"
-                    class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded transition">
-                Executar código
-            </button>
-        </div>
+<div class="w-full md:w-1/2 bg-white rounded-lg shadow-md flex flex-col">
+    <div class="bg-slate-700 text-white p-2 rounded-t-lg">
+        <span class="font-medium">Console</span>
     </div>
+    <div id="output" class="flex-grow p-4 font-mono text-sm bg-slate-800 text-green-400 rounded-b-lg overflow-auto">
+        > Resultado da execução aparecerá aqui...
+    </div>
+    <div class="p-3 border-t border-slate-200">
+        <button id="run-button"
+                class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-4 rounded transition">
+            Executar código
+        </button>
+    </div>
+</div>
 </div>
 
 <footer class="bg-slate-800 text-white p-2 text-center text-sm">
@@ -50,6 +53,40 @@
         editor.setTheme("ace/theme/monokai");
         editor.session.setMode("ace/mode/java");
         editor.setFontSize(14);
+
+        const langTools = ace.require("ace/ext/language_tools");
+
+        editor.setOptions({
+            enableBasicAutocompletion: true,
+            enableSnippets: true,
+            enableLiveAutocompletion: true
+        });
+
+        const javaCompletions = [
+            {name: "public", value: "public ", score: 100, meta: "keyword"},
+            {name: "class", value: "class ", score: 100, meta: "keyword"},
+            {name: "static", value: "static ", score: 100, meta: "keyword"},
+            {name: "void", value: "void ", score: 100, meta: "keyword"},
+            {name: "int", value: "int ", score: 100, meta: "keyword"},
+            {name: "String", value: "String ", score: 100, meta: "type"},
+            {name: "System.out.println", value: "System.out.println()", score: 90, meta: "method"},
+            {name: "for", value: "for (int i = 0; i < n; i++) {}", score: 100, meta: "keyword"},
+            {name: "if", value: "if () {}", score: 100, meta: "keyword"},
+            {name: "new", value: "new ", score: 100, meta: "keyword"}
+        ];
+
+        langTools.addCompleter({
+            getCompletions: function (editor, session, pos, prefix, callback) {
+                callback(null, javaCompletions.map(function (word) {
+                    return {
+                        caption: word.name,
+                        value: word.value,
+                        score: word.score, // Prioridade da sugestão
+                        meta: word.meta
+                    };
+                }));
+            }
+        });
 
         const javaTemplate = `import java.util.*;
 import java.io.*;
@@ -77,13 +114,11 @@ public class Main {
     }
 }`;
 
-        // Garantir que o editor está pronto antes de definir o código inicial
         setTimeout(() => {
             editor.setValue(javaTemplate);
             editor.clearSelection();
         }, 100);
 
-        // Configuração do WebSocket
         const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/code`);
         let ignorarProximasMudancas = false;
 
@@ -108,7 +143,6 @@ public class Main {
             console.error(`Erro WebSocket: ${error}`);
         };
 
-        // Debounce para evitar enviar muitas atualizações
         let timeout = null;
         editor.on("change", function () {
             if (ignorarProximasMudancas) return;
