@@ -80,7 +80,7 @@
                     return {
                         caption: word.name,
                         value: word.value,
-                        score: word.score, // Prioridade da sugestão
+                        score: word.score,
                         meta: word.meta
                     };
                 }));
@@ -118,7 +118,8 @@ public class Main {
             editor.clearSelection();
         }, 100);
 
-        const socket = new WebSocket(`${window.location.protocol === 'https:' ? 'wss' : 'ws'}://${window.location.host}/code`);
+        const websocketPort = 8888;
+        const socket = new WebSocket(`ws://${window.location.hostname}:${websocketPort}`);
         let ignorarProximasMudancas = false;
 
         socket.onopen = function (e) {
@@ -135,7 +136,11 @@ public class Main {
         };
 
         socket.onclose = function (event) {
-            console.log("Conexão WebSocket fechada");
+            console.log("Conexão WebSocket fechada. Tentando reconectar...");
+            setTimeout(() => {
+                // Tenta reconectar após 3 segundos
+                window.location.reload();
+            }, 3000);
         };
 
         socket.onerror = function (error) {
@@ -167,17 +172,17 @@ public class Main {
                     "Content-Type": "text/plain"
                 }
             })
-                .then(response => response.text())
-                .then(result => {
-                    output.innerHTML = "> " + result
-                        .replace(/&/g, "&amp;")
-                        .replace(/</g, "&lt;")
-                        .replace(/>/g, "&gt;")
-                        .replace(/\n/g, "<br>");
-                })
-                .catch(error => {
-                    output.innerHTML = "> Erro: " + error;
-                });
+            .then(response => response.text())
+            .then(result => {
+                output.innerHTML = "> " + result
+                    .replace(/&/g, "&amp;")
+                    .replace(/</g, "&lt;")
+                    .replace(/>/g, "&gt;")
+                    .replace(/\n/g, "<br>");
+            })
+            .catch(error => {
+                output.innerHTML = "> Erro: " + error;
+            });
         });
     });
 </script>
